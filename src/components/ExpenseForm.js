@@ -8,14 +8,19 @@ const now = moment();
 console.log(now.format("MMM Do, YYYY"));
 
 class ExpenseForm extends Component {
+    constructor(props) {
+        super(props);
 
-    state = {
-        description: "",
-        note: "",
-        amount: "",
-        createAt: moment(),
-        focused: false
+        this.state = {
+            description: props.expense ? props.expense.description : "",
+            note: props.expense ? props.expense.note : "",
+            amount: props.expense ? (props.expense.amount / 100).toString() : "",
+            createdAt: props.expense ? moment(props.expense.createdAt) : moment(),
+            calenderFocused: false,
+            error: ""
+        }
     }
+
 
     onDescriptonChange = e => {
         const description = e.target.value;
@@ -30,19 +35,38 @@ class ExpenseForm extends Component {
     onAmountChange = (e) => {
         const amount = e.target.value;
 
-        if (amount.match(/^\d * (\.\d{ 0, 2}) ? $/)) {
+        if (amount.match()) { // use regex here
             this.setState(() => ({ amount }))
         };
     };
 
-    // onDateChange = (createdAt) => {
-    //     this.setState(() => ({ createdAt }))
-    // }
+
+    onDateChange = (createdAt) => {
+        if (createdAt) {
+            this.setState(() => ({ createdAt }))
+        }
+    }
+
+    onSubmit = e => {
+        e.preventDefault();
+        if (!this.state.description || !this.state.amount) {
+            this.setState(() => ({ error: "Please provide description and amount" }))
+        } else {
+            this.setState(() => ({ error: "" }));
+            this.props.onSubmit({
+                description: this.state.description,
+                amount: parseInt(this.state.amount, 10) * 100,
+                createdAt: this.state.createdAt.valueOf(),
+                note: this.state.note
+            })
+        }
+    }
 
     render() {
         return (
             <div>
-                <form>
+                { this.state.error && <p>{ this.state.error }</p>}
+                <form onSubmit={ this.onSubmit }>
                     <input 
                         type="text" 
                         placeholder="Description" 
@@ -58,13 +82,13 @@ class ExpenseForm extends Component {
                         onChange={ this.onAmountChange }
                     />
                     <SingleDatePicker 
-                        date={ this.state.createAt }
-                        onDateChange={ date => this.setState({ date }) }
-                        focused={ this.state.focused }
-                        onFocusChange={ ({ focused }) => this.setState({ focused }) }
+                        date={ this.state.createdAt }
+                        onDateChange={ this.onDateChange }
+                        focused={ this.state.calenderFocused }
+                        onFocusChange={ ({ focused }) => this.setState({ calenderFocused: focused }) }
                         numberOfMonths={1}
                         isOutsideRange={() => false}
-                    />
+                    /><br />
                     <textarea 
                         placeholder="Add a note for your expense"
                         value={this.state.note}
